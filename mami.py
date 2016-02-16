@@ -26,7 +26,26 @@ class Session:
 
     def find_common(self, passwd, n):
         """Return list of password who share n letters in common with given password"""
-        return
+        commons = []
+        for p in self.passwords:
+            if p != passwd:
+                nb_commons = 0
+                for idx in range(len(passwd)):
+                    if passwd[idx] == p[idx]:
+                        nb_commons = nb_commons + 1
+                if nb_commons == n:
+                    commons.append(p)
+        return commons
+
+    def get_candidates(self):
+        """Based on state of list of passwords and number of good letters, return list of candidates"""
+        # Initialize candidates with passwords not tested yet
+        candidates = [c for c in self.passwords.keys() if self.passwords[c] == None]
+        tried_passwords = [p for p in self.passwords.keys() if self.passwords[p] != None]
+        for p in tried_passwords:
+            sub_candidates = self.find_common(p, self.passwords[p])
+            candidates = [c for c in candidates if c in sub_candidates]
+        return candidates
 
 
 if __name__ == "__main__":
@@ -35,4 +54,8 @@ if __name__ == "__main__":
     session.add_password("foo")
     session.add_password("bar")
     session.add_password("for")
+    print "candidates are " + str(session.get_candidates())
+    session.try_password("foo", 2)
+    print session.find_common("foo", 2)
+    print "candidates are " + str(session.get_candidates())
 
