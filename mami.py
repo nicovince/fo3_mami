@@ -25,7 +25,7 @@ class Session:
         self.passwords[passwd] = n
 
     def find_common(self, passwd, n):
-        """Return list of password who share at least n letters in common with given password"""
+        """Return list of password who share n letters in common with given password"""
         commons = []
         for p in self.passwords:
             if p != passwd:
@@ -33,7 +33,7 @@ class Session:
                 for idx in range(len(passwd)):
                     if passwd[idx] == p[idx]:
                         nb_commons = nb_commons + 1
-                if nb_commons >= n:
+                if nb_commons == n:
                     commons.append(p)
         return commons
 
