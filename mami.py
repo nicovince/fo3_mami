@@ -18,11 +18,16 @@ class Session:
         self.passwords.pop(password, None)
 
     def try_password(self, passwd, n):
-        """Reccord n as number of good positions for password"""
+        """
+        Reccord n as number of good positions for password
+        
+        Return True if n is equals to length of passwd
+        """
         if self.passwords.has_key(passwd):
             if self.passwords[passwd] != n and self.passwords[passwd] is not None:
                 print "Password %s already, number of good positions was %d, now set to %d" % (passwd, self.passwords[passwd], n)
         self.passwords[passwd] = n
+        return len(passwd) == n
 
     @classmethod
     def get_nb_common(cls, p1, p2):
@@ -51,19 +56,29 @@ class Session:
         candidates = [c for c in self.passwords.keys() if self.passwords[c] == None]
         tried_passwords = [p for p in self.passwords.keys() if self.passwords[p] != None]
         for p in tried_passwords:
+            if len(p) == self.passwords[p]:
+                candidates = [p]
+                break;
             sub_candidates = self.find_common(p, self.passwords[p])
             candidates = [c for c in candidates if c in sub_candidates]
         return candidates
 
-    def play(self, match):
+    def autoplay(self, match):
+        """Autoplay current session with provided password"""
         candidates = self.get_candidates()
         while len(candidates) != 1:
             trial = candidates[0]
             print "Test %s from "  % (trial) + str(candidates)
-            self.try_password(trial, self.get_nb_common(trial, match))
-            candidates = self.get_candidates()
+            if self.try_password(trial, self.get_nb_common(trial, match)):
+                candidates = [trial]
+            else:
+                candidates = self.get_candidates()
         print candidates[0]
 
+    def clear_trials(self):
+        """Clear trials on list of passwords"""
+        for k in self.passwords.keys():
+            self.passwords[k] = None
 
 # Example of password list
 passwords = ["DRIED",
@@ -94,6 +109,8 @@ if __name__ == "__main__":
     session = Session()
     for p in passwords:
         session.add_password(p)
-    session.play("FRIES")
+    session.autoplay("FRIES")
+    session.clear_trials()
+    session.autoplay("CREED")
 
 
