@@ -24,15 +24,23 @@ class Session:
                 print "Password %s already, number of good positions was %d, now set to %d" % (passwd, self.passwords[passwd], n)
         self.passwords[passwd] = n
 
+    @classmethod
+    def get_nb_common(cls, p1, p2):
+        """Return number of letters at same positions in p1 and p2"""
+        assert(len(p1) == len(p2))
+        nb_commons = 0
+        for idx in range(len(p1)):
+            if p1[idx] == p2[idx]:
+                nb_commons = nb_commons + 1
+        return nb_commons
+
+
     def find_common(self, passwd, n):
         """Return list of password who share n letters in common with given password"""
         commons = []
         for p in self.passwords:
             if p != passwd:
-                nb_commons = 0
-                for idx in range(len(passwd)):
-                    if passwd[idx] == p[idx]:
-                        nb_commons = nb_commons + 1
+                nb_commons = self.get_nb_common(passwd, p)
                 if nb_commons == n:
                     commons.append(p)
         return commons
@@ -47,6 +55,30 @@ class Session:
             candidates = [c for c in candidates if c in sub_candidates]
         return candidates
 
+    def play(self, match):
+        candidates = self.get_candidates()
+        while len(candidates) != 1:
+            trial = candidates[0]
+            print "Test %s from "  % (trial) + str(candidates)
+            self.try_password(trial, self.get_nb_common(trial, match))
+            candidates = self.get_candidates()
+        print candidates[0]
+
+
+# Example of password list
+passwords = ["DRIED",
+             "FREED",
+             "GREED",
+             "CARED",
+             "TRULY",
+             "TIRED",
+             "CRIED",
+             "TRAIL",
+             "THIRD",
+             "TRUTH",
+             "CREED",
+             "FLUID",
+             "FRIES"]
 
 if __name__ == "__main__":
     print "hello world"
@@ -58,4 +90,10 @@ if __name__ == "__main__":
     session.try_password("foo", 2)
     print session.find_common("foo", 2)
     print "candidates are " + str(session.get_candidates())
+    print "------------"
+    session = Session()
+    for p in passwords:
+        session.add_password(p)
+    session.play("FRIES")
+
 
