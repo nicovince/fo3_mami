@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # Solve Mastermind kind of game present in Fallout 3
 
+import sys
+
 class Session:
     def __init__(self):
         # Dictionnary of password/number of good positions
@@ -95,39 +97,66 @@ class Session:
     def ui_try_password(self):
         """User interface to test password"""
         idx = 1
+        # List passwords with number of good letters when available
         for p in self.passwords.keys():
             if self.passwords[p] != None:
                 print "%d) %s : %d good letters" % (idx, p, self.passwords[p])
             else:
                 print "%d) %s" % (idx, p)
             idx = idx + 1
+        # Get user input and check it
         choice = raw_input("Which password do you want to try : ")
         while not self.check_numerical_choice(choice, 1, len(self.passwords)):
             print "Invalid choice, must be in range %d - %d" % (1, len(self.passwords))
             choice = raw_input("Which password do you want to try : ")
         choice = int(choice)
 
+        # Get number of good letters for tried password
         password = self.passwords.keys()[choice - 1]
         nb_good_letters = raw_input("How many good letters in %s : " % (password))
         while not self.check_numerical_choice(nb_good_letters, 0, len(password)):
             nb_good_letters = raw_input("How many good letters in %s : " % (password))
         nb_good_letters = int(nb_good_letters)
 
+        # Record number of letters for the tested password
         self.try_password(password, nb_good_letters)
 
+    def ui_find_candidates(self):
+        """Display remaining candidates"""
+        print "Remaining candidates are " + str(self.get_candidates())
 
     def menu(self):
         """Display main menu and ask for user choice"""
-        menu = {"(a)dd password" : "a",
-                "(t)ry password" : "t",
-                "(f)ind candidates" : "f"}
+        # key : [ text, function to execute]
+        menu_map = {"a" : ["(a)dd password", self.ui_add_password],
+                    "t" : ["(t)ry password", self.ui_try_password],
+                    "f" : ["(f)ind candidates", self.ui_find_candidates],
+                    "q" : ["(q)uit", sys.exit]}
+        while True:
+            # Display menu
+            for k in menu_map.keys():
+                print menu_map[k][0]
+            # Read choice from user and check it
+            choice = raw_input("Choice : ")
+            while not self.check_alpha_choice(choice, menu_map.keys()):
+                print "Invalid choice : %s" % choice
+                choice = raw_input("Choice : ")
+            # Execute selected choice
+            menu_map[choice][1]()
+            print ""
 
     @classmethod
     def check_numerical_choice(cls, n , lower, upper):
+        """Check choice is in integer range"""
         if n.isdigit():
             return int(n) in range(lower, upper + 1)
         else:
             return False
+
+    @classmethod
+    def check_alpha_choice(cls, c, choices):
+        """Check choice is in list of choices"""
+        return c in choices
 
 
 # Example of password list
@@ -151,13 +180,16 @@ def test_autoplay():
         session.add_password(p)
     session.autoplay("FRIES")
 
-
-if __name__ == "__main__":
-    test_autoplay()
+def test_play():
     session = Session()
     session.ui_add_password()
     session.ui_add_password()
     session.ui_try_password()
     print session.get_candidates()
+
+if __name__ == "__main__":
+    test_autoplay()
+    session = Session()
+    session.menu()
 
 
