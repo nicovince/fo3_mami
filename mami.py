@@ -95,22 +95,14 @@ passwords = ["DRIED",
              "FLUID",
              "FRIES"]
 
-if __name__ == "__main__":
-    print "hello world"
-    session = Session()
-    session.add_password("foo")
-    session.add_password("bar")
-    session.add_password("for")
-    print "candidates are " + str(session.get_candidates())
-    session.try_password("foo", 2)
-    print session.find_common("foo", 2)
-    print "candidates are " + str(session.get_candidates())
-    print "------------"
+def test_autoplay():
     session = Session()
     for p in passwords:
         session.add_password(p)
     session.autoplay("FRIES")
-    session.clear_trials()
-    session.autoplay("CREED")
+
+
+if __name__ == "__main__":
+    test_autoplay()
 
 
