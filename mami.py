@@ -199,7 +199,11 @@ class Pipboy(Session):
             line_idx = line_idx + 1
         self.stdscr.refresh()
 
-    def display_passwords(self):
+    def display_passwords(self, hl_password=""):
+        """Display list of passwords with number of good letters
+
+        Highlight the provided password if available
+        """
         self.stdscr.clear()
         if len(self.passwords) == 0:
             center = self.x / 2
@@ -210,6 +214,10 @@ class Pipboy(Session):
             line_offset = 3
             idx = 0
             for p in self.passwords.keys():
+                attr = curses.A_NORMAL
+                # Highlight requested password
+                if p == hl_password:
+                    attr = curses.A_STANDOUT
                 # string for number of letters. "??" when unknown.
                 if self.passwords[p] != None:
                     nb_letters = "%02d" % self.passwords[p]
@@ -220,7 +228,9 @@ class Pipboy(Session):
                 # Align right if more than 9 passwords
                 if len(self.passwords) >= 10 and idx < 9:
                     password_idx = " " + password_idx
-                self.stdscr.addstr(line_offset + idx, 10, "%s) %s (%s)" % (password_idx, p, nb_letters))
+                self.stdscr.addstr(line_offset + idx, 10,
+                                   "%s) %s (%s)" % (password_idx, p, nb_letters),
+                                   attr)
                 idx = idx + 1
             self.stdscr.refresh()
 
@@ -305,7 +315,7 @@ if __name__ == "__main__":
         #pipboy.display_menu()
         for p in passwords:
             pipboy.add_password(p)
-        pipboy.display_passwords()
+        pipboy.display_passwords("FLUID")
     finally:
         pipboy.exit()
     #pipboy.setup()
