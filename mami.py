@@ -2,6 +2,9 @@
 # Solve Mastermind kind of game present in Fallout 3
 
 import sys
+import curses
+import curses.textpad
+import time
 
 class Session:
     def __init__(self):
@@ -158,6 +161,57 @@ class Session:
         """Check choice is in list of choices"""
         return c in choices
 
+class Pipboy(Session):
+    """Curses interface for solving master mind game"""
+    def __init__(self):
+        # Global window
+        self.stdscr = curses.initscr()
+        self.y, self.x = self.stdscr.getmaxyx()
+        curses.noecho()
+        curses.cbreak()
+        # User window, with borders and prompt
+        self.usr_win = curses.newwin(4, self.x, self.y - 5, 0)
+        self.usr_win.addstr(1, 2, "> ")
+        self.usr_win.border("|","|","-","-","+","+","+","+")
+        # Text window where user enters commands
+        self.text_box_win = curses.newwin(1, self.x, self.y - 4, 4)
+        # Text box where user commands are read from
+        self.text_box = curses.textpad.Textbox(self.text_box_win)
+
+
+    @classmethod
+    def exit(cls):
+        curses.nocbreak()
+        curses.echo()
+        curses.endwin()
+
+
+    def display_testing(self):
+        self.stdscr.refresh()
+        self.usr_win.refresh()
+        self.stdscr.addstr(11,3, "usr] x : %d - y : %d" % (self.usr_win.getmaxyx()[0], self.usr_win.getmaxyx()[1]))
+        self.stdscr.refresh()
+        #curses.echo()
+        #usr_input = self.usr_win.getstr(1, 4)
+        #curses.noecho()
+        usr_input = self.text_box.edit()
+        self.stdscr.addstr(12, 2, usr_input)
+        self.stdscr.refresh()
+
+    def setup(self):
+        try:
+            newwin = curses.newwin(5, 10, 0, 0)
+            inputscr = curses.textpad.Textbox(newwin)
+            self.stdscr.addstr(10, 10, "hello")
+            self.stdscr.refresh()
+            s = inputscr.edit()
+            self.stdscr.addstr(11,10, s)
+            #self.stdscr.erase()
+            self.stdscr.refresh()
+            self.stdscr.addstr(10, 10, "goodbye")
+            self.stdscr.refresh()
+        finally:
+            curses.endwin()
 
 # Example of password list
 passwords = ["DRIED",
@@ -187,9 +241,30 @@ def test_play():
     session.ui_try_password()
     print session.get_candidates()
 
-if __name__ == "__main__":
-    test_autoplay()
+def test_menu():
     session = Session()
     session.menu()
 
+def google():
+    begin_x = 20
+    begin_y = 7
+    height = 5
+    width = 40
+    curses.noecho()
+    curses.cbreak()
+    win = curses.newwin(height, width, begin_y, begin_x)
+    try:
+        tb = curses.textpad.Textbox(win)
+        text = tb.edit()
+        curses.addstr(4,1,text.encode('utf_8'))
+    finally:
+        curses.endwin()
 
+if __name__ == "__main__":
+    pipboy = Pipboy()
+    try:
+        pipboy.display_testing()
+    finally:
+        pipboy.exit()
+    #pipboy.setup()
+    #google()
