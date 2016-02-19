@@ -234,6 +234,11 @@ class Pipboy(Session):
                 idx = idx + 1
             self.stdscr.refresh()
 
+    def prompt(self):
+        #self.usr_win.addstr(1, 2, "> ")
+        self.usr_win.refresh()
+        usr_input = self.text_box.edit()
+
 
     def display_testing(self):
         self.stdscr.refresh()
@@ -316,6 +321,7 @@ if __name__ == "__main__":
         for p in passwords:
             pipboy.add_password(p)
         pipboy.display_passwords("FLUID")
+        pipboy.prompt()
     finally:
         pipboy.exit()
     #pipboy.setup()
