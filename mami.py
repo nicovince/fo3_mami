@@ -10,11 +10,13 @@ class Session:
     def __init__(self):
         # Dictionnary of password/number of good positions
         self.passwords = {}
+        self.password_len = 0
 
     def add_password(self, passwd):
         """Add a password to the list, initialize number of good positions to None"""
         if not self.passwords.has_key(passwd):
             self.passwords[passwd] = None
+            self.password_len = len(passwd)
         else:
             print "password %s already present in list" % passwd
 
@@ -164,6 +166,7 @@ class Session:
 class Pipboy(Session):
     """Curses interface for solving master mind game"""
     def __init__(self):
+        Session.__init__(self)
         # Global window
         self.stdscr = curses.initscr()
         self.y, self.x = self.stdscr.getmaxyx()
@@ -184,6 +187,42 @@ class Pipboy(Session):
         curses.nocbreak()
         curses.echo()
         curses.endwin()
+
+    def display_menu(self):
+        menu_map = {"a" : ["(a)dd password", self.ui_add_password],
+                    "t" : ["(t)ry password", self.ui_try_password],
+                    "f" : ["(f)ind candidates", self.ui_find_candidates],
+                    "q" : ["(q)uit", sys.exit]}
+        line_idx = 3
+        for k in menu_map.keys():
+            self.stdscr.addstr(line_idx, 10, menu_map[k][0])
+            line_idx = line_idx + 1
+        self.stdscr.refresh()
+
+    def display_passwords(self):
+        self.stdscr.clear()
+        if len(self.passwords) == 0:
+            center = self.x / 2
+            msg = "No password"
+            self.stdscr.addstr(10, center - len(msg)/2, msg)
+            self.stdscr.refresh()
+        else:
+            line_offset = 3
+            idx = 0
+            for p in self.passwords.keys():
+                # string for number of letters. "??" when unknown.
+                if self.passwords[p] != None:
+                    nb_letters = "%02d" % self.passwords[p]
+                else:
+                    nb_letters = "??"
+                # Password index used to select password when trying a password
+                password_idx = "%d" % (idx + 1)
+                # Align right if more than 9 passwords
+                if len(self.passwords) >= 10 and idx < 9:
+                    password_idx = " " + password_idx
+                self.stdscr.addstr(line_offset + idx, 10, "%s) %s (%s)" % (password_idx, p, nb_letters))
+                idx = idx + 1
+            self.stdscr.refresh()
 
 
     def display_testing(self):
@@ -263,7 +302,10 @@ def google():
 if __name__ == "__main__":
     pipboy = Pipboy()
     try:
-        pipboy.display_testing()
+        #pipboy.display_menu()
+        for p in passwords:
+            pipboy.add_password(p)
+        pipboy.display_passwords()
     finally:
         pipboy.exit()
     #pipboy.setup()
