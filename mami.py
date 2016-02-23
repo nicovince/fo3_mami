@@ -244,17 +244,23 @@ class Pipboy(Session):
 
     def display_hl_item(self, itemslist, hl_item):
         """Display item list and highlight a particular one"""
-        self.stdscr.clear()
+        # Initialize attributes to normal
+        itemsattr = [curses.A_NORMAL] * len(itemslist)
+        # Highlight requested one
+        itemsattr[itemslist.index(hl_item)] = curses.A_STANDOUT
+        # Display items with requested
+        self.display_items(itemslist, itemsattr)
+
+    def display_items(self, itemslist, itemsattr):
+        """Display list of items with their corresponding attributes"""
+        assert(len(itemslist) == len(itemsattr))
         line_offset = 3
         idx = 0
         for item in itemslist:
-            attr = curses.A_NORMAL
-            if item == hl_item:
-                attr = curses.A_STANDOUT
+            attr = itemsattr[idx]
             self.stdscr.addstr(line_offset + idx, 10, item, attr)
             idx = idx + 1
         self.stdscr.refresh()
-
 
     def select_item(self, itemslist):
         """Select an item from item list using arrow keys"""
