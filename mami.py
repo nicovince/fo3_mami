@@ -348,6 +348,21 @@ class Pipboy(object):
         self.dbg_print(item + " selected")
         return item
 
+    def prompt(self, choices=None):
+        #self.usr_win.addstr(1, 2, "> ")
+        self.text_box_win.clear()
+        self.usr_win.refresh()
+        usr_input = self.text_box.edit() 
+        self.stdscr.addstr(0,0, usr_input + " " + str(type(choices[0])))
+        self.stdscr.addstr(1,0, str(choices))
+        self.stdscr.refresh()
+        while usr_input.strip() not in choices:
+            self.stdscr.addstr(self.y - 6, 0, "Invalid command")
+            self.stdscr.refresh()
+            self.text_box_win.clear()
+            usr_input = self.text_box.edit()
+        return usr_input
+
 
 # Example of password list
 passwords = ["DRIED",
