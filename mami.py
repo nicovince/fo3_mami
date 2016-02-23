@@ -167,22 +167,34 @@ class Pipboy(object):
     """Curses interface for solving master mind game"""
     def __init__(self):
         self.session = Session()
+        self.setup_menu()
         # Global window
         self.stdscr = curses.initscr()
+        # To be able to do getch()
         self.stdscr.keypad(1)
+        # Size of global window
         self.y, self.x = self.stdscr.getmaxyx()
+        # Do not echo input
         curses.noecho()
+        # Get key pressed immediately
         curses.cbreak()
-        # User window, with borders and prompt
-        self.usr_win = curses.newwin(4, self.x, self.y - 5, 0)
+        # User window, with border and prompt [Bottom]
+        self.usr_win = curses.newwin(2, self.x, self.y - 3, 0)
+        self.usr_win.addstr(0, 0, "-" * self.x)
         self.usr_win.addstr(1, 2, "> ")
-        self.usr_win.border("|","|","-","-","+","+","+","+")
         # Text window where user enters commands
-        self.text_box_win = curses.newwin(1, self.x, self.y - 4, 4)
+        self.text_box_win = curses.newwin(1, self.x, self.y - 2, 4)
         # Text box where user commands are read from
         self.text_box = curses.textpad.Textbox(self.text_box_win)
-        # Debug window
-        self.dbg_win = curses.newwin(5, self.x, self.y - 10, 0)
+        # Debug window [ First line]
+        self.dbg_win = curses.newwin(1, self.x, 0, 0)
+        # Menu window, above user window
+        self.menu_win = curses.newwin(2, self.x, self.y - 5, 0)
+        # items windows, where password are displayed
+        y,x = self.menu_win.getbegyx()
+        self.dbg_print("y : %d - x : %d" % (y, x))
+        self.item_win = curses.newwin(y-1, 0, 0, 0)
+
 
     def dbg_print(self, s):
         """Print string in debug window"""
@@ -196,33 +208,79 @@ class Pipboy(object):
         curses.echo()
         curses.endwin()
 
-    def display_menu(self):
-        menu = [{"a" : {"text" : "(a)dd password",
-                        "callback" : None}},
-                {"t" : {"text" : "(t)ry password",
-                        "callback" : None}},
-                {"f" : {"text" : "(f)ind candidates",
-                        "callback" : None}},
-                {"q" : {"text" : "(q)uit",
-                        "callback" : None}}]
+    def setup_menu(self):
+        self.menu = [{"a" : {"text" : "(a)dd password",
+                             "callback" : self.add_password}},
+                     {"t" : {"text" : "(t)ry password",
+                             "callback" : None}},
+                     {"f" : {"text" : "(f)ind candidates",
+                             "callback" : None}},
+                     {"q" : {"text" : "(q)uit",
+                             "callback" : sys.exit}}]
 
+
+    def get_menu_callback(self, key):
+        """Get callback for given menu key"""
+        for entry in self.menu:
+            if entry.keys()[0] == key:
+                return entry[key]["callback"]
+        return None
+
+    def display_options(self, options):
+        """Display options in menu window"""
+        self.menu_win.clear()
+        self.menu_win.move(0, 2)
+        for opt in options:
+            self.menu_win.addstr(opt + "   ")
+        self.menu_win.refresh()
+
+    def display_menu(self):
         menulist = []
-        for entry in menu:
+        for entry in self.menu:
             key = entry.keys()[0]
             menulist.append(entry[key]["text"])
-        self.display_items(menulist)
+        self.display_options(menulist)
+
+    def clear_menu(self):
+        self.menu_win.clear()
+        self.menu_win.refresh()
+
+    def add_password(self):
+        """Adds password to current session"""
+        if len(self.session.passwords) > 0:
+            self.display_items(self.session.passwords)
+        self.usr_win.refresh()
+        self.display_options(["Enter password candidate"])
+        password = self.text_box.edit()
+        self.session.add_password(password)
+        self.text_box_win.clear()
+        self.text_box_win.refresh()
+        self.display_items(self.session.passwords)
+        self.clear_menu()
+
+    def main_loop(self):
+        """Adds/Try password or quit"""
+        self.display_menu()
+        while True:
+            self.usr_win.refresh()
+            key = self.text_box_win.getkey()
+            callback = self.get_menu_callback(key.strip())
+            if callback != None:
+                callback()
+                self.display_menu()
+
 
     def display_passwords(self, hl_password=""):
         """Display list of passwords with number of good letters
 
         Highlight the provided password if available
         """
-        self.stdscr.clear()
+        self.item_win.clear()
         if len(self.session.passwords) == 0:
             center = self.x / 2
             msg = "No password"
-            self.stdscr.addstr(10, center - len(msg)/2, msg)
-            self.stdscr.refresh()
+            self.item_win.addstr(10, center - len(msg)/2, msg)
+            self.item_win.refresh()
         else:
             line_offset = 3
             idx = 0
@@ -241,11 +299,11 @@ class Pipboy(object):
                 # Align right if more than 9 passwords
                 if len(self.session.passwords) >= 10 and idx < 9:
                     password_idx = " " + password_idx
-                self.stdscr.addstr(line_offset + idx, 10,
-                                   "%s) %s (%s)" % (password_idx, p, nb_letters),
-                                   attr)
+                self.item_win.addstr(line_offset + idx, 10,
+                                     "%s) %s (%s)" % (password_idx, p, nb_letters),
+                                     attr)
                 idx = idx + 1
-            self.stdscr.refresh()
+            self.item_win.refresh()
 
     def display_hl_item(self, itemslist, hl_item):
         """Display item list and highlight a particular one"""
@@ -263,12 +321,12 @@ class Pipboy(object):
         assert(len(itemslist) == len(itemsattr))
         line_offset = 3
         idx = 0
-        self.stdscr.clear()
+        self.item_win.clear()
         for item in itemslist:
             attr = itemsattr[idx]
-            self.stdscr.addstr(line_offset + idx, 10, item, attr)
+            self.item_win.addstr(line_offset + idx, 10, item, attr)
             idx = idx + 1
-        self.stdscr.refresh()
+        self.item_win.refresh()
 
     def select_item(self, itemslist):
         """Select an item from item list using arrow keys"""
@@ -277,7 +335,7 @@ class Pipboy(object):
         item = itemslist[0]
         self.display_hl_item(itemslist, item)
         # Read user key pressed
-        key = self.stdscr.getch()
+        key = self.item_win.getch()
         # Exit when pressing enter
         while key != curses.KEY_ENTER and key != 10 and key != 13:
             if key == curses.KEY_DOWN and item != itemslist[-1]:
@@ -286,7 +344,7 @@ class Pipboy(object):
             elif key == curses.KEY_UP and item != itemslist[0]:
                item = itemslist[itemslist.index(item) - 1]
                self.display_hl_item(itemslist, item)
-            key = self.stdscr.getch()
+            key = self.item_win.getch()
         self.dbg_print(item + " selected")
         return item
 
@@ -341,11 +399,12 @@ def google():
 if __name__ == "__main__":
     pipboy = Pipboy()
     try:
-        pipboy.display_menu()
+        #pipboy.display_menu()
         for p in passwords:
             pipboy.session.add_password(p)
         #pipboy.display_passwords("FLUID")
         #pipboy.display_hl_item(pipboy.passwords, "FLUID")
-        pipboy.select_item(pipboy.session.passwords.keys())
+        #pipboy.select_item(pipboy.session.passwords.keys())
+        pipboy.main_loop()
     finally:
         pipboy.exit()
