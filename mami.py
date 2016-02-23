@@ -251,8 +251,10 @@ class Pipboy(Session):
         # Display items with requested
         self.display_items(itemslist, itemsattr)
 
-    def display_items(self, itemslist, itemsattr):
+    def display_items(self, itemslist, itemsattr=None):
         """Display list of items with their corresponding attributes"""
+        if itemsattr == None:
+            itemsattr = [curses.A_NORMAL] * len(itemslist)
         assert(len(itemslist) == len(itemsattr))
         line_offset = 3
         idx = 0
