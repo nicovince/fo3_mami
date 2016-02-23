@@ -169,6 +169,7 @@ class Pipboy(Session):
         Session.__init__(self)
         # Global window
         self.stdscr = curses.initscr()
+        self.stdscr.keypad(1)
         self.y, self.x = self.stdscr.getmaxyx()
         curses.noecho()
         curses.cbreak()
@@ -180,7 +181,14 @@ class Pipboy(Session):
         self.text_box_win = curses.newwin(1, self.x, self.y - 4, 4)
         # Text box where user commands are read from
         self.text_box = curses.textpad.Textbox(self.text_box_win)
+        # Debug window
+        self.dbg_win = curses.newwin(5, self.x, self.y - 10, 0)
 
+    def dbg_print(self, s):
+        """Print string in debug window"""
+        self.dbg_win.clear()
+        self.dbg_win.addstr(0, 0, s)
+        self.dbg_win.refresh()
 
     @classmethod
     def exit(cls):
@@ -233,6 +241,37 @@ class Pipboy(Session):
                                    attr)
                 idx = idx + 1
             self.stdscr.refresh()
+
+    def display_hl_item(self, itemslist, hl_item):
+        """Display item list and highlight a particular one"""
+        self.stdscr.clear()
+        line_offset = 3
+        idx = 0
+        for item in itemslist:
+            attr = curses.A_NORMAL
+            if item == hl_item:
+                attr = curses.A_STANDOUT
+            self.stdscr.addstr(line_offset + idx, 10, item, attr)
+            idx = idx + 1
+        self.stdscr.refresh()
+
+
+    def select_item(self, itemslist):
+        """Select an item from item list using arrow keys"""
+        assert(len(itemslist) > 0)
+        item = itemslist[0]
+        self.display_hl_item(itemslist, item)
+        key = self.stdscr.getch()
+        while key != curses.KEY_ENTER and key != 10 and key != 13:
+            if key == curses.KEY_DOWN and item != itemslist[-1]:
+               item = itemslist[itemslist.index(item) + 1]
+               self.display_hl_item(itemslist, item)
+            elif key == curses.KEY_UP and item != itemslist[0]:
+               item = itemslist[itemslist.index(item) - 1]
+               self.display_hl_item(itemslist, item)
+            key = self.stdscr.getch()
+        self.dbg_print(item + " selected")
+        return item
 
 
     def display_testing(self):
@@ -315,7 +354,9 @@ if __name__ == "__main__":
         #pipboy.display_menu()
         for p in passwords:
             pipboy.add_password(p)
-        pipboy.display_passwords("FLUID")
+        #pipboy.display_passwords("FLUID")
+        #pipboy.display_hl_item(pipboy.passwords, "FLUID")
+        pipboy.select_item(pipboy.passwords.keys())
     finally:
         pipboy.exit()
     #pipboy.setup()
