@@ -282,33 +282,6 @@ class Pipboy(Session):
         return item
 
 
-    def display_testing(self):
-        self.stdscr.refresh()
-        self.usr_win.refresh()
-        self.stdscr.addstr(11,3, "usr] x : %d - y : %d" % (self.usr_win.getmaxyx()[0], self.usr_win.getmaxyx()[1]))
-        self.stdscr.refresh()
-        #curses.echo()
-        #usr_input = self.usr_win.getstr(1, 4)
-        #curses.noecho()
-        usr_input = self.text_box.edit()
-        self.stdscr.addstr(12, 2, usr_input)
-        self.stdscr.refresh()
-
-    def setup(self):
-        try:
-            newwin = curses.newwin(5, 10, 0, 0)
-            inputscr = curses.textpad.Textbox(newwin)
-            self.stdscr.addstr(10, 10, "hello")
-            self.stdscr.refresh()
-            s = inputscr.edit()
-            self.stdscr.addstr(11,10, s)
-            #self.stdscr.erase()
-            self.stdscr.refresh()
-            self.stdscr.addstr(10, 10, "goodbye")
-            self.stdscr.refresh()
-        finally:
-            curses.endwin()
-
 # Example of password list
 passwords = ["DRIED",
              "FREED",
@@ -367,5 +340,3 @@ if __name__ == "__main__":
         pipboy.select_item(pipboy.passwords.keys())
     finally:
         pipboy.exit()
-    #pipboy.setup()
-    #google()
