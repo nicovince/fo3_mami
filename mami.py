@@ -163,10 +163,10 @@ class Session:
         """Check choice is in list of choices"""
         return c in choices
 
-class Pipboy(Session):
+class Pipboy(object):
     """Curses interface for solving master mind game"""
     def __init__(self):
-        Session.__init__(self)
+        self.session = Session()
         # Global window
         self.stdscr = curses.initscr()
         self.stdscr.keypad(1)
@@ -218,7 +218,7 @@ class Pipboy(Session):
         Highlight the provided password if available
         """
         self.stdscr.clear()
-        if len(self.passwords) == 0:
+        if len(self.session.passwords) == 0:
             center = self.x / 2
             msg = "No password"
             self.stdscr.addstr(10, center - len(msg)/2, msg)
@@ -226,20 +226,20 @@ class Pipboy(Session):
         else:
             line_offset = 3
             idx = 0
-            for p in self.passwords.keys():
+            for p in self.session.passwords.keys():
                 attr = curses.A_NORMAL
                 # Highlight requested password
                 if p == hl_password:
                     attr = curses.A_STANDOUT
                 # string for number of letters. "??" when unknown.
-                if self.passwords[p] != None:
-                    nb_letters = "%02d" % self.passwords[p]
+                if self.session.passwords[p] != None:
+                    nb_letters = "%02d" % self.session.passwords[p]
                 else:
                     nb_letters = "??"
                 # Password index used to select password when trying a password
                 password_idx = "%d" % (idx + 1)
                 # Align right if more than 9 passwords
-                if len(self.passwords) >= 10 and idx < 9:
+                if len(self.session.passwords) >= 10 and idx < 9:
                     password_idx = " " + password_idx
                 self.stdscr.addstr(line_offset + idx, 10,
                                    "%s) %s (%s)" % (password_idx, p, nb_letters),
@@ -263,6 +263,7 @@ class Pipboy(Session):
         assert(len(itemslist) == len(itemsattr))
         line_offset = 3
         idx = 0
+        self.stdscr.clear()
         for item in itemslist:
             attr = itemsattr[idx]
             self.stdscr.addstr(line_offset + idx, 10, item, attr)
@@ -342,9 +343,9 @@ if __name__ == "__main__":
     try:
         pipboy.display_menu()
         for p in passwords:
-            pipboy.add_password(p)
+            pipboy.session.add_password(p)
         #pipboy.display_passwords("FLUID")
         #pipboy.display_hl_item(pipboy.passwords, "FLUID")
-        #pipboy.select_item(pipboy.passwords.keys())
+        pipboy.select_item(pipboy.session.passwords.keys())
     finally:
         pipboy.exit()
