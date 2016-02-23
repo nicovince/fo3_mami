@@ -27,7 +27,7 @@ class Session:
     def try_password(self, passwd, n):
         """
         Reccord n as number of good positions for password
-        
+
         Return True if n is equals to length of passwd
         """
         if self.passwords.has_key(passwd):
@@ -272,9 +272,12 @@ class Pipboy(Session):
     def select_item(self, itemslist):
         """Select an item from item list using arrow keys"""
         assert(len(itemslist) > 0)
+        # select first item from the list
         item = itemslist[0]
         self.display_hl_item(itemslist, item)
+        # Read user key pressed
         key = self.stdscr.getch()
+        # Exit when pressing enter
         while key != curses.KEY_ENTER and key != 10 and key != 13:
             if key == curses.KEY_DOWN and item != itemslist[-1]:
                item = itemslist[itemslist.index(item) + 1]
