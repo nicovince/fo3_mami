@@ -197,15 +197,20 @@ class Pipboy(Session):
         curses.endwin()
 
     def display_menu(self):
-        menu_map = {"a" : ["(a)dd password", self.ui_add_password],
-                    "t" : ["(t)ry password", self.ui_try_password],
-                    "f" : ["(f)ind candidates", self.ui_find_candidates],
-                    "q" : ["(q)uit", sys.exit]}
-        line_idx = 3
-        for k in menu_map.keys():
-            self.stdscr.addstr(line_idx, 10, menu_map[k][0])
-            line_idx = line_idx + 1
-        self.stdscr.refresh()
+        menu = [{"a" : {"text" : "(a)dd password",
+                        "callback" : None}},
+                {"t" : {"text" : "(t)ry password",
+                        "callback" : None}},
+                {"f" : {"text" : "(f)ind candidates",
+                        "callback" : None}},
+                {"q" : {"text" : "(q)uit",
+                        "callback" : None}}]
+
+        menulist = []
+        for entry in menu:
+            key = entry.keys()[0]
+            menulist.append(entry[key]["text"])
+        self.display_items(menulist)
 
     def display_passwords(self, hl_password=""):
         """Display list of passwords with number of good letters
@@ -332,11 +337,11 @@ def google():
 if __name__ == "__main__":
     pipboy = Pipboy()
     try:
-        #pipboy.display_menu()
+        pipboy.display_menu()
         for p in passwords:
             pipboy.add_password(p)
         #pipboy.display_passwords("FLUID")
         #pipboy.display_hl_item(pipboy.passwords, "FLUID")
-        pipboy.select_item(pipboy.passwords.keys())
+        #pipboy.select_item(pipboy.passwords.keys())
     finally:
         pipboy.exit()
