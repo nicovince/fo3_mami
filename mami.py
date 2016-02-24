@@ -20,6 +20,9 @@ class Session:
         else:
             print "password %s already present in list" % passwd
 
+    def get_passwords(self):
+        return self.passwords.keys()
+
     def delete_password(self, passwd):
         """Remove a password from the list"""
         self.passwords.pop(password, None)
@@ -60,8 +63,8 @@ class Session:
     def get_candidates(self):
         """Based on state of list of passwords and number of good letters, return list of candidates"""
         # Initialize candidates with passwords not tested yet
-        candidates = [c for c in self.passwords.keys() if self.passwords[c] == None]
-        tried_passwords = [p for p in self.passwords.keys() if self.passwords[p] != None]
+        candidates = [c for c in self.get_passwords() if self.passwords[c] == None]
+        tried_passwords = [p for p in self.get_passwords() if self.passwords[p] != None]
         for p in tried_passwords:
             if len(p) == self.passwords[p]:
                 candidates = [p]
@@ -84,7 +87,7 @@ class Session:
 
     def clear_trials(self):
         """Clear trials on list of passwords"""
-        for k in self.passwords.keys():
+        for k in self.get_passwords():
             self.passwords[k] = None
 
     def ui_add_password(self):
@@ -92,7 +95,7 @@ class Session:
         password = raw_input("Add password to the list : ").upper()
         # check length of password
         if len(self.passwords) != 0:
-            password_len = len(self.passwords.keys()[0])
+            password_len = len(self.get_passwords()[0])
             while len(password) != password_len:
                 print "Wrong password length, expecting %d character" % password_len
                 password = raw_input("Add password to the list : ").upper()
@@ -103,7 +106,7 @@ class Session:
         """User interface to test password"""
         idx = 1
         # List passwords with number of good letters when available
-        for p in self.passwords.keys():
+        for p in self.get_passwords():
             if self.passwords[p] != None:
                 print "%d) %s : %d good letters" % (idx, p, self.passwords[p])
             else:
@@ -117,7 +120,7 @@ class Session:
         choice = int(choice)
 
         # Get number of good letters for tried password
-        password = self.passwords.keys()[choice - 1]
+        password = self.get_passwords()[choice - 1]
         nb_good_letters = raw_input("How many good letters in %s : " % (password))
         while not self.check_numerical_choice(nb_good_letters, 0, len(password)):
             nb_good_letters = raw_input("How many good letters in %s : " % (password))
@@ -261,7 +264,7 @@ class Pipboy(object):
 
     def try_password(self):
         """Try password, and ask number of good letters"""
-        password = self.select_item(self.session.passwords.keys())
+        password = self.select_item(self.session.get_passwords())
         self.display_options(["How many good letters ? "])
         while True:
             nb_good_letters = self.text_box.edit()
@@ -301,7 +304,7 @@ class Pipboy(object):
         else:
             line_offset = 3
             idx = 0
-            for p in self.session.passwords.keys():
+            for p in self.session.get_passwords():
                 attr = curses.A_NORMAL
                 # Highlight requested password
                 if p == hl_password:
