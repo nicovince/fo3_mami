@@ -345,13 +345,20 @@ class Pipboy(object):
             idx = idx + 1
         self.item_win.refresh()
 
-    def select_item(self, itemslist):
+    def select_item(self, itemslist, attrlist=None):
         """Select an item from item list using arrow keys"""
         assert(len(itemslist) > 0)
+        if attrlist == None:
+            attrlist = [curses.A_NORMAL] * len(itemslist)
+        assert(len(itemslist) == len(attrlist))
         # select first item from the list
         item = itemslist[0]
+        selattrlist = attrlist
+        selattrlist[itemslist.index(item)] = curses.A_STANDOUT
+        # Set cursor
         self.item_win.move(3, 10)
-        self.display_hl_item(itemslist, item)
+        #self.display_hl_item(itemslist, item)
+        self.display_items(itemslist, selattrlist)
         # Read user key pressed
         key = self.item_win.getch()
         # Exit when pressing enter
@@ -360,10 +367,11 @@ class Pipboy(object):
             if key == curses.KEY_DOWN and item != itemslist[-1]:
                 self.dbg_print("down key pressed")
                 item = itemslist[itemslist.index(item) + 1]
-                self.display_hl_item(itemslist, item)
             elif key == curses.KEY_UP and item != itemslist[0]:
                 item = itemslist[itemslist.index(item) - 1]
-                self.display_hl_item(itemslist, item)
+            selattrlist = attrlist
+            selattrlist[itemslist.index(item)] = curses.A_STANDOUT
+            self.display_hl_item(itemslist, item)
             key = self.item_win.getch()
         self.dbg_print(item + " selected")
         return item
