@@ -213,7 +213,7 @@ class Pipboy(object):
         self.menu = [{"a" : {"text" : "(a)dd password",
                              "callback" : self.add_password}},
                      {"t" : {"text" : "(t)ry password",
-                             "callback" : None}},
+                             "callback" : self.try_password}},
                      {"f" : {"text" : "(f)ind candidates",
                              "callback" : None}},
                      {"q" : {"text" : "(q)uit",
@@ -258,6 +258,22 @@ class Pipboy(object):
         self.text_box_win.refresh()
         self.display_items(self.session.passwords)
         self.clear_menu()
+
+    def try_password(self):
+        """Try password, and ask number of good letters"""
+        password = self.select_item(self.session.passwords.keys())
+        self.display_options(["How many good letters ? "])
+        while True:
+            nb_good_letters = self.text_box.edit()
+            nb_good_letters = nb_good_letters.strip()
+            self.text_box_win.clear()
+            self.text_box_win.refresh()
+            if (nb_good_letters.isdigit() and
+                self.session.check_numerical_choice(nb_good_letters, 0, self.session.password_len)):
+                break
+            else:
+                self.dbg_print("%s not accepted %s" % (nb_good_letters, nb_good_letters.isdigit()))
+        self.session.try_password(password, nb_good_letters)
 
     def main_loop(self):
         """Adds/Try password or quit"""
@@ -334,6 +350,7 @@ class Pipboy(object):
         assert(len(itemslist) > 0)
         # select first item from the list
         item = itemslist[0]
+        self.item_win.move(3, 10)
         self.display_hl_item(itemslist, item)
         # Read user key pressed
         key = self.item_win.getch()
@@ -422,7 +439,7 @@ if __name__ == "__main__":
             pipboy.session.add_password(p)
         #pipboy.display_passwords("FLUID")
         #pipboy.display_hl_item(pipboy.passwords, "FLUID")
-        pipboy.select_item(pipboy.session.passwords.keys())
-        #pipboy.main_loop()
+        #pipboy.select_item(pipboy.session.passwords.keys())
+        pipboy.main_loop()
     finally:
         pipboy.exit()
