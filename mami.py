@@ -78,7 +78,8 @@ class Session:
         candidates = self.get_candidates()
         while len(candidates) != 1:
             trial = candidates[0]
-            print "Test %s from "  % (trial) + str(candidates)
+            n = self.get_nb_common(trial, match)
+            print "Test %s from %s, got %d good letters"  % (trial, str(candidates), n)
             if self.try_password(trial, self.get_nb_common(trial, match)):
                 candidates = [trial]
             else:
@@ -193,8 +194,7 @@ class Pipboy(object):
         self.menu_win = curses.newwin(2, self.x, self.y - 5, 0)
         # items windows, where password are displayed
         y,x = self.menu_win.getbegyx()
-        self.dbg_print("y : %d - x : %d" % (y, x))
-        self.item_win = curses.newwin(y-1, 0, 0, 0)
+        self.item_win = curses.newwin(y-1, self.x, 1, 0)
         # To be able to do getch() and interpret keypad correctly
         self.stdscr.keypad(1)
         self.item_win.keypad(1)
@@ -264,7 +264,8 @@ class Pipboy(object):
 
     def try_password(self):
         """Try password, and ask number of good letters"""
-        password = self.select_item(self.session.get_passwords())
+        attributes = self.get_passwords_attributes()
+        password = self.select_item(self.session.get_passwords(), attributes)
         self.display_options(["How many good letters ? "])
         while True:
             nb_good_letters = self.text_box.edit()
@@ -276,7 +277,7 @@ class Pipboy(object):
                 break
             else:
                 self.dbg_print("%s not accepted %s" % (nb_good_letters, nb_good_letters.isdigit()))
-        self.session.try_password(password, nb_good_letters)
+        self.session.try_password(password, int(nb_good_letters))
 
     def main_loop(self):
         """Adds/Try password or quit"""
@@ -356,7 +357,7 @@ class Pipboy(object):
         assert(len(itemslist) == len(attrlist))
         # select first item from the list
         item = itemslist[0]
-        selattrlist = attrlist
+        selattrlist = list(attrlist)
         selattrlist[itemslist.index(item)] = curses.A_STANDOUT
         # Set cursor
         self.item_win.move(3, 10)
@@ -366,24 +367,36 @@ class Pipboy(object):
         key = self.item_win.getch()
         # Exit when pressing enter
         while key != curses.KEY_ENTER and key != 10 and key != 13:
-            self.dbg_print("%d key pressed; KEY_DOWN = %d" % (key, curses.KEY_DOWN))
             if key == curses.KEY_DOWN and item != itemslist[-1]:
-                self.dbg_print("down key pressed")
                 item = itemslist[itemslist.index(item) + 1]
             elif key == curses.KEY_UP and item != itemslist[0]:
                 item = itemslist[itemslist.index(item) - 1]
-            selattrlist = attrlist
+            selattrlist = list(attrlist)
             selattrlist[itemslist.index(item)] = curses.A_STANDOUT
-            self.display_hl_item(itemslist, item)
+            self.display_items(itemslist, selattrlist)
             key = self.item_win.getch()
         self.dbg_print(item + " selected")
         return item
+
+    def get_passwords_attributes(self):
+        """Get attributes to display each password based on candidacy"""
+        # Initialize
+        attrlist = [curses.A_NORMAL] * len(self.session.passwords)
+        candidates = self.session.get_candidates()
+        for p in candidates:
+            attrlist[self.session.get_passwords().index(p)] = curses.A_BOLD
+        if len(candidates) == 1:
+            attrlist[self.session.get_passwords().index(p)] = curses.A_BLINK
+
+        self.dbg_print("candidates : " + str(candidates))
+        return attrlist
+
 
     def prompt(self, choices=None):
         #self.usr_win.addstr(1, 2, "> ")
         self.text_box_win.clear()
         self.usr_win.refresh()
-        usr_input = self.text_box.edit() 
+        usr_input = self.text_box.edit()
         self.stdscr.addstr(0,0, usr_input + " " + str(type(choices[0])))
         self.stdscr.addstr(1,0, str(choices))
         self.stdscr.refresh()
@@ -427,6 +440,13 @@ def test_menu():
     session = Session()
     session.menu()
 
+def test_cried():
+    session = Session()
+    for p in passwords:
+        session.add_password(p)
+    session.autoplay("CRIED")
+    sys.exit(0)
+
 def google():
     begin_x = 20
     begin_y = 7
@@ -443,6 +463,7 @@ def google():
         curses.endwin()
 
 if __name__ == "__main__":
+    #test_cried()
     pipboy = Pipboy()
     try:
         #pipboy.display_menu()
