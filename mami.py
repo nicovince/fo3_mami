@@ -170,8 +170,6 @@ class Pipboy(object):
         self.setup_menu()
         # Global window
         self.stdscr = curses.initscr()
-        # To be able to do getch()
-        self.stdscr.keypad(1)
         # Size of global window
         self.y, self.x = self.stdscr.getmaxyx()
         # Do not echo input
@@ -194,6 +192,9 @@ class Pipboy(object):
         y,x = self.menu_win.getbegyx()
         self.dbg_print("y : %d - x : %d" % (y, x))
         self.item_win = curses.newwin(y-1, 0, 0, 0)
+        # To be able to do getch() and interpret keypad correctly
+        self.stdscr.keypad(1)
+        self.item_win.keypad(1)
 
 
     def dbg_print(self, s):
@@ -338,12 +339,14 @@ class Pipboy(object):
         key = self.item_win.getch()
         # Exit when pressing enter
         while key != curses.KEY_ENTER and key != 10 and key != 13:
+            self.dbg_print("%d key pressed; KEY_DOWN = %d" % (key, curses.KEY_DOWN))
             if key == curses.KEY_DOWN and item != itemslist[-1]:
-               item = itemslist[itemslist.index(item) + 1]
-               self.display_hl_item(itemslist, item)
+                self.dbg_print("down key pressed")
+                item = itemslist[itemslist.index(item) + 1]
+                self.display_hl_item(itemslist, item)
             elif key == curses.KEY_UP and item != itemslist[0]:
-               item = itemslist[itemslist.index(item) - 1]
-               self.display_hl_item(itemslist, item)
+                item = itemslist[itemslist.index(item) - 1]
+                self.display_hl_item(itemslist, item)
             key = self.item_win.getch()
         self.dbg_print(item + " selected")
         return item
@@ -419,7 +422,7 @@ if __name__ == "__main__":
             pipboy.session.add_password(p)
         #pipboy.display_passwords("FLUID")
         #pipboy.display_hl_item(pipboy.passwords, "FLUID")
-        #pipboy.select_item(pipboy.session.passwords.keys())
-        pipboy.main_loop()
+        pipboy.select_item(pipboy.session.passwords.keys())
+        #pipboy.main_loop()
     finally:
         pipboy.exit()
