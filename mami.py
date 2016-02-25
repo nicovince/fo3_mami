@@ -27,6 +27,11 @@ class Session:
         """Remove a password from the list"""
         self.passwords.pop(password, None)
 
+    def clear_passwords(self):
+        """Clear all passwords in current session"""
+        self.passwords.clear()
+        self.password_len = 0
+
     def try_password(self, passwd, n):
         """
         Reccord n as number of good positions for password
@@ -217,11 +222,10 @@ class Pipboy(object):
                              "callback" : self.add_password}},
                      {"t" : {"text" : "(t)ry password",
                              "callback" : self.try_password}},
-                     {"f" : {"text" : "(f)ind candidates",
-                             "callback" : None}},
+                     {"c" : {"text" : "(c)lear passwords",
+                             "callback" : self.clear_passwords}},
                      {"q" : {"text" : "(q)uit",
                              "callback" : sys.exit}}]
-
 
     def get_menu_callback(self, key):
         """Get callback for given menu key"""
@@ -255,6 +259,8 @@ class Pipboy(object):
             self.display_items(self.session.passwords)
         self.usr_win.refresh()
         self.display_options(["Enter password candidate"])
+        self.item_win.move(3, 10)
+        self.text_box_win.refresh()
         password = self.text_box.edit()
         self.session.add_password(password)
         self.text_box_win.clear()
@@ -279,6 +285,12 @@ class Pipboy(object):
                 self.dbg_print("%s not accepted %s" % (nb_good_letters, nb_good_letters.isdigit()))
         self.session.try_password(password, int(nb_good_letters))
 
+    def clear_passwords(self):
+        """Clear passwords in current session and on screen"""
+        self.session.clear_passwords()
+        self.item_win.clear()
+        self.item_win.refresh()
+
     def main_loop(self):
         """Adds/Try password or quit"""
         self.display_menu()
@@ -289,42 +301,6 @@ class Pipboy(object):
             if callback != None:
                 callback()
                 self.display_menu()
-
-
-    def display_passwords(self, hl_password=""):
-        """Display list of passwords with number of good letters
-
-        Highlight the provided password if available
-        """
-        self.item_win.clear()
-        if len(self.session.passwords) == 0:
-            center = self.x / 2
-            msg = "No password"
-            self.item_win.addstr(10, center - len(msg)/2, msg)
-            self.item_win.refresh()
-        else:
-            line_offset = 3
-            idx = 0
-            for p in self.session.get_passwords():
-                attr = curses.A_NORMAL
-                # Highlight requested password
-                if p == hl_password:
-                    attr = curses.A_STANDOUT
-                # string for number of letters. "??" when unknown.
-                if self.session.passwords[p] != None:
-                    nb_letters = "%02d" % self.session.passwords[p]
-                else:
-                    nb_letters = "??"
-                # Password index used to select password when trying a password
-                password_idx = "%d" % (idx + 1)
-                # Align right if more than 9 passwords
-                if len(self.session.passwords) >= 10 and idx < 9:
-                    password_idx = " " + password_idx
-                self.item_win.addstr(line_offset + idx, 10,
-                                     "%s) %s (%s)" % (password_idx, p, nb_letters),
-                                     attr)
-                idx = idx + 1
-            self.item_win.refresh()
 
     def display_hl_item(self, itemslist, hl_item):
         """Display item list and highlight a particular one"""
@@ -469,8 +445,6 @@ if __name__ == "__main__":
         #pipboy.display_menu()
         for p in passwords:
             pipboy.session.add_password(p)
-        #pipboy.display_passwords("FLUID")
-        #pipboy.display_hl_item(pipboy.passwords, "FLUID")
         #pipboy.select_item(pipboy.session.passwords.keys())
         pipboy.main_loop()
     finally:
