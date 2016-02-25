@@ -8,28 +8,53 @@ import time
 
 class Session:
     def __init__(self):
-        # Dictionnary of password/number of good positions
-        self.passwords = {}
+        # List of dictionnary passwords : [{"password1" : {"n" : 3}}, {"password2": ...}]
+        self.passwords = []
         self.password_len = 0
+
+    def has_password(self, passwd):
+        """Return True when passwd already present in passwords list"""
+        for p in self.passwords:
+            if passwd in p.keys():
+                return True
+        return False
 
     def add_password(self, passwd):
         """Add a password to the list, initialize number of good positions to None"""
-        if not self.passwords.has_key(passwd):
-            self.passwords[passwd] = None
+        if not self.has_password(passwd):
+            self.passwords.append({passwd : {"n" : None}})
             self.password_len = len(passwd)
         else:
             print "password %s already present in list" % passwd
 
     def get_passwords(self):
-        return self.passwords.keys()
+        password_list = []
+        for p in self.passwords:
+            password_list.append(p.keys()[0])
+        return password_list
 
     def delete_password(self, passwd):
         """Remove a password from the list"""
-        self.passwords.pop(password, None)
+        #self.passwords.pop(password, None)
+        for p in self.passwords:
+            if p.keys()[0] == passwd:
+                self.passwords.pop(p)
+                break
+
+    def get_nb_good_letters(self, passwd):
+        for p in self.passwords:
+            if passwd in p.keys():
+                return p[passwd]["n"]
+
+    def set_nb_good_letters(self, passwd, n):
+        """Set number of good letters for password"""
+        for p in self.passwords:
+            if passwd in p.keys():
+                p[passwd]["n"] = n
 
     def clear_passwords(self):
         """Clear all passwords in current session"""
-        self.passwords.clear()
+        self.passwords = []
         self.password_len = 0
 
     def try_password(self, passwd, n):
@@ -38,10 +63,11 @@ class Session:
 
         Return True if n is equals to length of passwd
         """
-        if self.passwords.has_key(passwd):
-            if self.passwords[passwd] != n and self.passwords[passwd] is not None:
-                print "Password %s already, number of good positions was %d, now set to %d" % (passwd, self.passwords[passwd], n)
-        self.passwords[passwd] = n
+        if self.has_password(passwd):
+            if (self.get_nb_good_letters(passwd) != n and
+                self.get_nb_good_letters(passwd) is not None):
+                print "Password %s already, number of good positions was %d, now set to %d" % (passwd, self.get_nb_good_letters(passwd), n)
+        self.set_nb_good_letters(passwd, n)
         return len(passwd) == n
 
     @classmethod
@@ -59,22 +85,23 @@ class Session:
         """Return list of password who share n letters in common with given password"""
         commons = []
         for p in self.passwords:
-            if p != passwd:
-                nb_commons = self.get_nb_common(passwd, p)
+            pa  = p.keys()[0]
+            if pa != passwd:
+                nb_commons = self.get_nb_common(passwd, pa)
                 if nb_commons == n:
-                    commons.append(p)
+                    commons.append(pa)
         return commons
 
     def get_candidates(self):
         """Based on state of list of passwords and number of good letters, return list of candidates"""
         # Initialize candidates with passwords not tested yet
-        candidates = [c for c in self.get_passwords() if self.passwords[c] == None]
-        tried_passwords = [p for p in self.get_passwords() if self.passwords[p] != None]
+        candidates = [c for c in self.get_passwords() if self.get_nb_good_letters(c) == None]
+        tried_passwords = [p for p in self.get_passwords() if self.get_nb_good_letters(p) != None]
         for p in tried_passwords:
-            if len(p) == self.passwords[p]:
+            if len(p) == self.get_nb_good_letters(p):
                 candidates = [p]
                 break;
-            sub_candidates = self.find_common(p, self.passwords[p])
+            sub_candidates = self.find_common(p, self.get_nb_good_letters(p))
             candidates = [c for c in candidates if c in sub_candidates]
         return candidates
 
@@ -95,6 +122,7 @@ class Session:
         """Clear trials on list of passwords"""
         for k in self.get_passwords():
             self.passwords[k] = None
+            self.set_nb_good_letters(k, None)
 
     def ui_add_password(self):
         """User interface for adding password to the list"""
@@ -113,8 +141,8 @@ class Session:
         idx = 1
         # List passwords with number of good letters when available
         for p in self.get_passwords():
-            if self.passwords[p] != None:
-                print "%d) %s : %d good letters" % (idx, p, self.passwords[p])
+            if self.get_nb_good_letters(p) != None:
+                print "%d) %s : %d good letters" % (idx, p, self.get_nb_good_letters(p))
             else:
                 print "%d) %s" % (idx, p)
             idx = idx + 1
@@ -256,7 +284,7 @@ class Pipboy(object):
     def add_password(self):
         """Adds password to current session"""
         if len(self.session.passwords) > 0:
-            self.display_items(self.session.passwords)
+            self.display_items(self.session.get_passwords())
         self.usr_win.refresh()
         self.display_options(["Enter password candidate"])
         self.item_win.move(3, 10)
@@ -265,7 +293,7 @@ class Pipboy(object):
         self.session.add_password(password)
         self.text_box_win.clear()
         self.text_box_win.refresh()
-        self.display_items(self.session.passwords)
+        self.display_items(self.session.get_passwords())
         self.clear_menu()
 
     def try_password(self):
@@ -416,12 +444,11 @@ def test_menu():
     session = Session()
     session.menu()
 
-def test_cried():
+def test_autoplay():
     session = Session()
     for p in passwords:
         session.add_password(p)
-    session.autoplay("CRIED")
-    sys.exit(0)
+    session.autoplay("FLUID")
 
 def google():
     begin_x = 20
@@ -439,7 +466,8 @@ def google():
         curses.endwin()
 
 if __name__ == "__main__":
-    #test_cried()
+    test_autoplay()
+    #sys.exit(0)
     pipboy = Pipboy()
     try:
         #pipboy.display_menu()
