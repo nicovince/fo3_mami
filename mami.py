@@ -299,7 +299,8 @@ class Pipboy(object):
     def try_password(self):
         """Try password, and ask number of good letters"""
         attributes = self.get_passwords_attributes()
-        password = self.select_item(self.session.get_passwords(), attributes)
+        passwords = self.session.get_passwords()
+        password = self.select_item(passwords, attributes)
         self.display_options(["How many good letters ? "])
         while True:
             nb_good_letters = self.text_box.edit()
@@ -312,6 +313,9 @@ class Pipboy(object):
             else:
                 self.dbg_print("%s not accepted %s" % (nb_good_letters, nb_good_letters.isdigit()))
         self.session.try_password(password, int(nb_good_letters))
+        # Redisplay passwords after trial
+        attributes = self.get_passwords_attributes()
+        self.display_items(passwords, attributes)
 
     def clear_passwords(self):
         """Clear passwords in current session and on screen"""
